@@ -86,6 +86,16 @@ html, body {
   50% { transform: translateY(6px); }
 }
 
+/* ===== 1번째 화면부터: 실제 앱 화면(9:16 한 프레임 분량). 인트로와 별개의
+   레이아웃 계산 단위로 분리해서 #preview의 flex:1이 여기 기준으로 정상 계산되게 함 */
+#mainScreen {
+  position: relative;
+  flex-shrink: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 /* 선택한 배경/아이템이 보여지는 미리보기 영역 (화면 대부분 차지) */
 #preview {
   flex: 1;
@@ -315,7 +325,10 @@ html, body {
 }
 
 .screen h2 {
-  font-size: 1rem;
+  font-family: 'Poor Story', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: #6F4518;
   margin-bottom: 10px;
   text-align: left;
 }
