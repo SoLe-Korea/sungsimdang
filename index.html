@@ -13,6 +13,16 @@
   <!-- 스마트폰 화면 전체를 감싸는 컨테이너 (9:16 비율) -->
   <div id="app">
 
+    <!-- ===== 0번째 화면: 인트로 (곰식이가 반겨주고, 아래로 스크롤하면 배경 선택으로) ===== -->
+    <div id="screenIntro">
+      <img src="item_gomsigi_wave.png" class="introBear" alt="곰식이">
+      <p class="introGreeting">안녕하세요!<br>저는 곰식이예요 🐻</p>
+      <div class="scrollHint">
+        <span>아래로 내려서 시작해요</span>
+        <span class="scrollHintArrow">↓</span>
+      </div>
+    </div>
+
     <!-- 선택된 배경/아이템이 여기 실시간으로 적용됨 -->
     <div id="preview">
       <div id="previewText">
@@ -43,17 +53,16 @@
 
     <!-- ===== 2번째 화면: 아이템 1 선택 ===== -->
     <div class="screen" id="screenItem1" style="display:none;">
-      <button type="button" class="backBtn" id="backFromItem1">← 이전</button>
-      <h2>아이템 1 선택</h2>
+      <div class="screenHeader">
+        <button type="button" class="backBtn" id="backFromItem1">← 이전</button>
+        <h2>아이템 1 선택</h2>
+      </div>
       <div class="thumbList itemThumbList" data-slot="1">
         <img src="bread1.png" class="thumb itemThumb" data-item="bread1.png">
         <img src="bread2.png" class="thumb itemThumb" data-item="bread2.png">
         <img src="bread3.png" class="thumb itemThumb" data-item="bread3.png">
         <img src="bread4.png" class="thumb itemThumb" data-item="bread4.png">
-        <img src="item_dance.png" class="thumb itemThumb" data-item="item_dance.png">
-        <img src="item_bagbear.png" class="thumb itemThumb" data-item="item_bagbear.png">
         <img src="item_baguette.png" class="thumb itemThumb" data-item="item_baguette.png">
-        <img src="item_logo.png" class="thumb itemThumb" data-item="item_logo.png">
       </div>
       <img src="item_dance.png" class="charBtn" id="nextFromItem1">
     </div>
@@ -69,17 +78,16 @@
 
     <!-- ===== 3번째 화면: 아이템 2 선택 ===== -->
     <div class="screen screenOverlay" id="screenItem2" style="display:none;">
-      <button type="button" class="backBtn" id="backFromItem2">← 이전</button>
-      <h2>아이템 2 선택</h2>
+      <div class="screenHeader">
+        <button type="button" class="backBtn" id="backFromItem2">← 이전</button>
+        <h2>아이템 2 선택</h2>
+      </div>
       <div class="thumbList itemThumbList" data-slot="2">
         <img src="bread1.png" class="thumb itemThumb" data-item="bread1.png">
         <img src="bread2.png" class="thumb itemThumb" data-item="bread2.png">
         <img src="bread3.png" class="thumb itemThumb" data-item="bread3.png">
         <img src="bread4.png" class="thumb itemThumb" data-item="bread4.png">
-        <img src="item_dance.png" class="thumb itemThumb" data-item="item_dance.png">
-        <img src="item_bagbear.png" class="thumb itemThumb" data-item="item_bagbear.png">
         <img src="item_baguette.png" class="thumb itemThumb" data-item="item_baguette.png">
-        <img src="item_logo.png" class="thumb itemThumb" data-item="item_logo.png">
       </div>
       <img src="item_dance.png" class="charBtn" id="nextFromItem2">
     </div>
@@ -95,17 +103,16 @@
 
     <!-- ===== 4번째 화면: 아이템 3 선택 ===== -->
     <div class="screen screenOverlay" id="screenItem3" style="display:none;">
-      <button type="button" class="backBtn" id="backFromItem3">← 이전</button>
-      <h2>아이템 3 선택</h2>
+      <div class="screenHeader">
+        <button type="button" class="backBtn" id="backFromItem3">← 이전</button>
+        <h2>아이템 3 선택</h2>
+      </div>
       <div class="thumbList itemThumbList" data-slot="3">
         <img src="bread1.png" class="thumb itemThumb" data-item="bread1.png">
         <img src="bread2.png" class="thumb itemThumb" data-item="bread2.png">
         <img src="bread3.png" class="thumb itemThumb" data-item="bread3.png">
         <img src="bread4.png" class="thumb itemThumb" data-item="bread4.png">
-        <img src="item_dance.png" class="thumb itemThumb" data-item="item_dance.png">
-        <img src="item_bagbear.png" class="thumb itemThumb" data-item="item_bagbear.png">
         <img src="item_baguette.png" class="thumb itemThumb" data-item="item_baguette.png">
-        <img src="item_logo.png" class="thumb itemThumb" data-item="item_logo.png">
       </div>
       <img src="item_dance.png" class="charBtn" id="nextFromItem3">
     </div>
@@ -121,8 +128,10 @@
 
     <!-- ===== 5번째 화면: 아이템 1 모션 입력 ===== -->
     <div class="screen screenOverlay" id="screenMotion1" style="display:none;">
-      <button type="button" class="backBtn" id="backFromMotion1">← 이전</button>
-      <h2>아이템 1 모션 입력</h2>
+      <div class="screenHeader">
+        <button type="button" class="backBtn" id="backFromMotion1">← 이전</button>
+        <h2>아이템 1 모션 입력</h2>
+      </div>
       <div class="motionButtons" data-motion-slot="1">
         <button class="motionBtn" data-motion="통통 튀며">통통 튀며</button>
         <button class="motionBtn" data-motion="빙글빙글">빙글빙글</button>
@@ -138,8 +147,10 @@
 
     <!-- ===== 6번째 화면: 아이템 2 모션 입력 ===== -->
     <div class="screen screenOverlay" id="screenMotion2" style="display:none;">
-      <button type="button" class="backBtn" id="backFromMotion2">← 이전</button>
-      <h2>아이템 2 모션 입력</h2>
+      <div class="screenHeader">
+        <button type="button" class="backBtn" id="backFromMotion2">← 이전</button>
+        <h2>아이템 2 모션 입력</h2>
+      </div>
       <div class="motionButtons" data-motion-slot="2">
         <button class="motionBtn" data-motion="통통 튀며">통통 튀며</button>
         <button class="motionBtn" data-motion="빙글빙글">빙글빙글</button>
@@ -155,8 +166,10 @@
 
     <!-- ===== 7번째 화면: 아이템 3 모션 입력 ===== -->
     <div class="screen screenOverlay" id="screenMotion3" style="display:none;">
-      <button type="button" class="backBtn" id="backFromMotion3">← 이전</button>
-      <h2>아이템 3 모션 입력</h2>
+      <div class="screenHeader">
+        <button type="button" class="backBtn" id="backFromMotion3">← 이전</button>
+        <h2>아이템 3 모션 입력</h2>
+      </div>
       <div class="motionButtons" data-motion-slot="3">
         <button class="motionBtn" data-motion="통통 튀며">통통 튀며</button>
         <button class="motionBtn" data-motion="빙글빙글">빙글빙글</button>
