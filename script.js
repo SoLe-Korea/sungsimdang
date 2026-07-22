@@ -405,6 +405,9 @@ async function getFinalMotionClass(motionText) {
   return await classifyMotionWithGroq(motionText);
 }
 
+// 슬롯별로 최종 확정된 모션 클래스 (동영상 캡처 때 재사용)
+const animMotionClasses = {};
+
 async function startAnimation() {
   // 배경 화면에 선택한 배경 적용
   document.getElementById("animBg").style.backgroundImage = `url('${selectedBg}')`;
@@ -422,13 +425,17 @@ async function startAnimation() {
 
     const motionClass = await getFinalMotionClass(selectedMotions[slot]);
     img.classList.add(motionClass);
+    animMotionClasses[slot] = motionClass;
   }
 
   document.getElementById("animationScreen").style.display = "block";
 
-  // 공유하기에 쓸 완성 이미지를 애니메이션이 재생되는 동안 미리 만들어둠
+  // 공유하기에 쓸 완성 이미지/동영상을 애니메이션이 재생되는 동안 미리 만들어둠
   renderFinalImage().then((blob) => {
     finalImageBlob = blob;
+  });
+  renderFinalVideo().then((blob) => {
+    finalVideoBlob = blob;
   });
 
   // 애니메이션 6.5초가 지나면 완료 화면으로 전환
@@ -495,10 +502,193 @@ async function renderFinalImage() {
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }
 
+// ===== 완성 동영상 만들기 (배경 + 아이템들의 실제 모션을 캔버스에 재현해서 녹화) =====
+
+const VIDEO_DURATION_SEC = 3;
+const VIDEO_FPS = 30;
+
+let finalVideoBlob = null;
+
+// CSS의 ease-in-out / ease-in과 비슷한 느낌을 내기 위한 간단한 이징 함수
+function easeInOut(t) {
+  return 0.5 - 0.5 * Math.cos(Math.PI * t);
+}
+function easeIn(t) {
+  return t * t;
+}
+
+// 모션 클래스별로 style.css의 @keyframes를 흉내내서, 경과 시간(tSec)에 따른
+// 위치/회전/크기/투명도 변화량을 계산 (캔버스 녹화용)
+function getMotionOffset(motionClass, t) {
+  switch (motionClass) {
+    case "motion-bounce": {
+      const phase = (t % 0.9) / 0.9;
+      return { dx: 0, dy: -40 * Math.sin(Math.PI * phase), rotateDeg: 0, scale: 1, opacity: 1 };
+    }
+    case "motion-spin": {
+      const phase = (t % 1.2) / 1.2;
+      return { dx: 0, dy: 0, rotateDeg: 360 * phase, scale: 1, opacity: 1 };
+    }
+    case "motion-zigzag": {
+      const points = [0, 35, -35, 35, 0];
+      const phase = (t % 1.6) / 1.6;
+      const segT = phase * 4;
+      const idx = Math.min(3, Math.floor(segT));
+      const local = segT - idx;
+      const dx = points[idx] + (points[idx + 1] - points[idx]) * easeInOut(local);
+      return { dx, dy: 0, rotateDeg: 0, scale: 1, opacity: 1 };
+    }
+    case "motion-slide": {
+      const cyclePos = (t % 4.4) / 2.2; // 0~2 (ease-in-out infinite alternate)
+      const dx = cyclePos <= 1 ? -100 + 200 * easeInOut(cyclePos) : 100 - 200 * easeInOut(cyclePos - 1);
+      return { dx, dy: 0, rotateDeg: 0, scale: 1, opacity: 1 };
+    }
+    case "motion-fast": {
+      const phase = (t % 0.7) / 0.7;
+      const dx = phase < 0.5 ? -120 + 240 * (phase / 0.5) : 120 - 240 * ((phase - 0.5) / 0.5);
+      return { dx, dy: 0, rotateDeg: 0, scale: 1, opacity: 1 };
+    }
+    case "motion-oven": {
+      const duration = 2.5;
+      if (t >= duration) return { dx: 0, dy: 0, rotateDeg: 0, scale: 0.1, opacity: 0 };
+      const phase = t / duration;
+      if (phase < 0.7) return { dx: 0, dy: 0, rotateDeg: 0, scale: 1, opacity: 1 };
+      const eased = easeIn((phase - 0.7) / 0.3);
+      return { dx: 0, dy: 0, rotateDeg: 0, scale: 1 - 0.9 * eased, opacity: 1 - eased };
+    }
+    default: {
+      // motion-float
+      const phase = (t % 2) / 2;
+      if (phase <= 0.5) {
+        const eased = easeInOut(phase / 0.5);
+        return { dx: 0, dy: -18 * eased, rotateDeg: -4 + 8 * eased, scale: 1, opacity: 1 };
+      }
+      const eased = easeInOut((phase - 0.5) / 0.5);
+      return { dx: 0, dy: -18 * (1 - eased), rotateDeg: 4 - 8 * eased, scale: 1, opacity: 1 };
+    }
+  }
+}
+
+function pickVideoMimeType() {
+  const candidates = [
+    "video/mp4;codecs=h264",
+    "video/mp4",
+    "video/webm;codecs=vp9",
+    "video/webm;codecs=vp8",
+    "video/webm",
+  ];
+  return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || null;
+}
+
+async function renderFinalVideo() {
+  // 이 브라우저가 캔버스 녹화를 지원하지 않으면 null 반환 (공유 시 이미지로 자동 대체됨)
+  if (typeof MediaRecorder === "undefined") return null;
+  const mimeType = pickVideoMimeType();
+  if (!mimeType) return null;
+
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = EXPORT_WIDTH;
+    canvas.height = EXPORT_HEIGHT;
+    if (typeof canvas.captureStream !== "function") return null;
+    const ctx = canvas.getContext("2d");
+
+    const bgImg = selectedBg ? await loadImage(selectedBg) : null;
+    const itemImgs = {};
+    for (const slot of [1, 2, 3]) {
+      if (selectedItems[slot]) itemImgs[slot] = await loadImage(selectedItems[slot]);
+    }
+    const scaleFactor = EXPORT_WIDTH / 480;
+
+    function drawFrame(tSec) {
+      ctx.fillStyle = "#F5EFE0";
+      ctx.fillRect(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+
+      if (bgImg) {
+        const scale = Math.min(EXPORT_WIDTH / bgImg.width, EXPORT_HEIGHT / bgImg.height);
+        const drawW = bgImg.width * scale;
+        const drawH = bgImg.height * scale;
+        ctx.drawImage(bgImg, (EXPORT_WIDTH - drawW) / 2, (EXPORT_HEIGHT - drawH) / 2, drawW, drawH);
+      }
+
+      for (const slot of [1, 2, 3]) {
+        const itemImg = itemImgs[slot];
+        if (!itemImg) continue;
+
+        const t = itemTransforms[slot];
+        const boxSize = t.size * scaleFactor;
+        const boxX = (t.leftPercent / 100) * EXPORT_WIDTH;
+        const boxY = (t.topPercent / 100) * EXPORT_HEIGHT;
+        const itemScale = Math.min(boxSize / itemImg.width, boxSize / itemImg.height);
+        const drawW = itemImg.width * itemScale;
+        const drawH = itemImg.height * itemScale;
+        const centerX = boxX + boxSize / 2;
+        const centerY = boxY + boxSize / 2;
+
+        const offset = getMotionOffset(animMotionClasses[slot], tSec);
+
+        ctx.save();
+        ctx.globalAlpha = offset.opacity;
+        ctx.translate(centerX + offset.dx * scaleFactor, centerY + offset.dy * scaleFactor);
+        ctx.rotate((offset.rotateDeg * Math.PI) / 180);
+        ctx.scale(offset.scale, offset.scale);
+        ctx.drawImage(itemImg, -drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.restore();
+      }
+    }
+
+    const stream = canvas.captureStream(VIDEO_FPS);
+    const recorder = new MediaRecorder(stream, { mimeType });
+    const chunks = [];
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+    const recordingDone = new Promise((resolve) => {
+      recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+    });
+
+    recorder.start();
+    const startTime = performance.now();
+    await new Promise((resolve) => {
+      let done = false;
+      function finish() {
+        if (done) return;
+        done = true;
+        resolve();
+      }
+      function tick() {
+        const elapsed = (performance.now() - startTime) / 1000;
+        drawFrame(elapsed);
+        if (elapsed >= VIDEO_DURATION_SEC) {
+          finish();
+        } else {
+          requestAnimationFrame(tick);
+        }
+      }
+      tick();
+      // 안전장치: 탭이 백그라운드라 requestAnimationFrame이 멈추는 등의 경우에도
+      // 무한정 대기하지 않도록 최대 대기시간 이후엔 강제로 녹화를 종료함
+      setTimeout(finish, VIDEO_DURATION_SEC * 1000 + 1000);
+    });
+    recorder.stop();
+
+    return recordingDone;
+  } catch (err) {
+    console.log("동영상 캡처 실패, 이미지로 대체됩니다:", err);
+    return null;
+  }
+}
+
 // ===== 10번째 화면: 완료 + 공유하기 =====
 
 document.getElementById("shareBtn").addEventListener("click", async () => {
   const shareText = "성심당에서 나만의 빵 애니메이션을 만들었어요! 🍞";
+
+  const videoFile = finalVideoBlob
+    ? new File([finalVideoBlob], `sungsimdang-bread.${finalVideoBlob.type.includes("mp4") ? "mp4" : "webm"}`, {
+        type: finalVideoBlob.type,
+      })
+    : null;
   const imageFile = finalImageBlob
     ? new File([finalImageBlob], "sungsimdang-bread.png", { type: "image/png" })
     : null;
@@ -506,7 +696,9 @@ document.getElementById("shareBtn").addEventListener("click", async () => {
   if (navigator.share) {
     // 스마트폰 기본 공유 기능(Web Share API) 사용
     try {
-      if (imageFile && navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+      if (videoFile && navigator.canShare && navigator.canShare({ files: [videoFile] })) {
+        await navigator.share({ text: shareText, files: [videoFile] });
+      } else if (imageFile && navigator.canShare && navigator.canShare({ files: [imageFile] })) {
         await navigator.share({ text: shareText, files: [imageFile] });
       } else {
         await navigator.share({ text: shareText });
