@@ -187,9 +187,41 @@ html, body {
 /* 화면 하단, 선택 화면들의 공통 스타일 (배경 선택, 아이템1/2/3 선택, 완료 화면)
    기본은 미리보기 아래에서 자기 높이만큼 미리보기를 밀어내는 방식 (원래 방식) */
 .screen {
+  position: relative; /* 이전 버튼(.backBtn)이 이 패널 기준으로 위치하도록 */
   padding: 16px;
   background: #F5EFE0;
   border-top: 1px solid #eee;
+}
+
+/* 각 단계에서 이전 화면으로 돌아가는 버튼 */
+.backBtn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  color: #6F4518;
+  cursor: pointer;
+  z-index: 9;
+}
+
+.backBtn:active {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* 위치 조정 화면(.positionScreen)에서는 오버레이 자체 기준 좌상단에 뜨고,
+   pointer-events:none인 부모와 달리 이 버튼만 클릭 가능해야 함 */
+.positionScreen .backBtn {
+  pointer-events: auto;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.positionScreen .backBtn:active {
+  background: rgba(0, 0, 0, 0.5);
 }
 
 /* 이미 배치를 마친 아이템이 있는 화면(아이템2/3 선택, 모션1/2/3 입력) 전용:

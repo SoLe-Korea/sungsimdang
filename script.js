@@ -19,8 +19,10 @@ bgThumbs.forEach((thumb) => {
     preview.style.backgroundImage = `url('${selectedBg}')`;
     previewText.style.display = "none";
 
-    // 배경을 골랐으니 곰식이 버튼을 눌리게 함
+    // 배경을 골랐으니 곰식이 버튼을 눌리게 하고, 버튼 이미지 자체를 방금 고른 배경으로 바꿔서
+    // "내가 고른 게 반영됐다"는 걸 눈으로 바로 알 수 있게 함
     nextFromBg.classList.add("active");
+    nextFromBg.src = selectedBg;
   });
 });
 
@@ -49,6 +51,8 @@ function setupItemScreen(slotNumber) {
       const itemPath = thumb.getAttribute("data-item");
       selectedItems[slotNumber] = itemPath;
       nextBtn.classList.add("active");
+      // 버튼 이미지 자체를 방금 고른 아이템으로 바꿔서 선택이 반영됐음을 바로 알 수 있게 함
+      nextBtn.src = itemPath;
     });
   });
 }
@@ -255,6 +259,66 @@ rotateHandle.addEventListener("pointermove", (e) => {
   rotateHandle.addEventListener(evt, () => {
     rotatingItem = false;
   });
+});
+
+// ===== 모든 단계의 "이전" 버튼 (지금까지 온 순서를 거꾸로 되돌아감) =====
+
+// 위치 조정 화면으로 다시 들어갈 때: 이미 확정(placedSlots)됐던 상태였다면 확정을 풀어서
+// 라이브 드래그 아이템과 정적 미리보기가 겹쳐 보이지 않게 함
+function reopenPositionScreen(slot) {
+  placedSlots.delete(slot);
+  renderPlacedItems();
+  openPositionScreen(slot);
+}
+
+// 위치 조정 화면에서 뒤로: 확정(다음으로 진행)하지 않고 그냥 이전 아이템 선택 화면으로 돌아감
+function backOutOfPositionScreen(slot, itemScreenId) {
+  document.getElementById(`screenPosition${slot}`).style.display = "none";
+  dragWrapper.style.display = "none";
+  activePositionSlot = null;
+  document.getElementById(itemScreenId).style.display = "block";
+}
+
+document.getElementById("backFromItem1").addEventListener("click", () => {
+  document.getElementById("screenItem1").style.display = "none";
+  document.getElementById("screenBg").style.display = "block";
+});
+
+document.getElementById("backFromPosition1").addEventListener("click", () => {
+  backOutOfPositionScreen(1, "screenItem1");
+});
+
+document.getElementById("backFromItem2").addEventListener("click", () => {
+  document.getElementById("screenItem2").style.display = "none";
+  reopenPositionScreen(1);
+});
+
+document.getElementById("backFromPosition2").addEventListener("click", () => {
+  backOutOfPositionScreen(2, "screenItem2");
+});
+
+document.getElementById("backFromItem3").addEventListener("click", () => {
+  document.getElementById("screenItem3").style.display = "none";
+  reopenPositionScreen(2);
+});
+
+document.getElementById("backFromPosition3").addEventListener("click", () => {
+  backOutOfPositionScreen(3, "screenItem3");
+});
+
+document.getElementById("backFromMotion1").addEventListener("click", () => {
+  document.getElementById("screenMotion1").style.display = "none";
+  reopenPositionScreen(3);
+});
+
+document.getElementById("backFromMotion2").addEventListener("click", () => {
+  document.getElementById("screenMotion2").style.display = "none";
+  document.getElementById("screenMotion1").style.display = "block";
+});
+
+document.getElementById("backFromMotion3").addEventListener("click", () => {
+  document.getElementById("screenMotion3").style.display = "none";
+  document.getElementById("screenMotion2").style.display = "block";
 });
 
 // ===== 5~7번째 화면: 아이템 1, 2, 3 모션 입력 (구조는 동일, 슬롯 번호만 다름) =====
