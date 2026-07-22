@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>모션 생성 서비스</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poor+Story&family=Gugi&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 스마트폰 화면 전체를 감싸는 컨테이너 (9:16 비율) -->
+  <div id="app">
+
+    <!-- 선택된 배경/아이템이 여기 실시간으로 적용됨 -->
+    <div id="preview">
+      <div id="previewText">
+        <div class="breadWrap">
+          <img src="bread_icon.svg" class="breadIcon" alt="빵">
+          <p class="breadText">배경을<br>선택해주세요</p>
+        </div>
+      </div>
+      <!-- 위치/크기 조정 화면에서만 보이는 드래그 가능한 아이템과 크기 조절 핸들 -->
+      <img id="dragItem" class="dragItem" style="display:none;" draggable="false">
+      <div id="dragHandle" class="dragHandle" style="display:none;"></div>
+    </div>
+
+    <!-- ===== 1번째 화면: 배경 선택 ===== -->
+    <div class="screen" id="screenBg">
+      <h2>배경 선택</h2>
+      <div class="thumbList">
+        <img src="bg1.png" class="thumb bgThumb" data-bg="bg1.png">
+        <img src="bg2.jpg" class="thumb bgThumb" data-bg="bg2.jpg">
+        <img src="bg3.jpg" class="thumb bgThumb" data-bg="bg3.jpg">
+      </div>
+      <img src="item_dance.png" class="charBtn" id="nextFromBg">
+    </div>
+
+    <!-- ===== 2번째 화면: 아이템 1 선택 ===== -->
+    <div class="screen" id="screenItem1" style="display:none;">
+      <h2>아이템 1 선택</h2>
+      <div class="thumbList itemThumbList" data-slot="1">
+        <img src="bread1.png" class="thumb itemThumb" data-item="bread1.png">
+        <img src="bread2.png" class="thumb itemThumb" data-item="bread2.png">
+        <img src="bread3.png" class="thumb itemThumb" data-item="bread3.png">
+        <img src="bread4.png" class="thumb itemThumb" data-item="bread4.png">
+        <img src="item_dance.png" class="thumb itemThumb" data-item="item_dance.png">
+        <img src="item_bagbear.png" class="thumb itemThumb" data-item="item_bagbear.png">
+        <img src="item_baguette.png" class="thumb itemThumb" data-item="item_baguette.png">
+        <img src="item_logo.png" class="thumb itemThumb" data-item="item_logo.png">
+      </div>
+      <img src="item_dance.png" class="charBtn" id="nextFromItem1">
+    </div>
+
+    <!-- ===== 아이템 1 위치/크기 조정 화면 (아이템 1 선택 직후) ===== -->
+    <div class="positionScreen" id="screenPosition1" style="display:none;">
+      <div class="positionControls">
+        <p>아이템을 드래그해서 위치를 옮기고,<br>파란 점을 당겨 크기를 조절하세요</p>
+        <img src="item_dance.png" class="charBtn active" id="nextFromPosition1">
+      </div>
+    </div>
+
+    <!-- ===== 3번째 화면: 아이템 2 선택 ===== -->
+    <div class="screen screenOverlay" id="screenItem2" style="display:none;">
+      <h2>아이템 2 선택</h2>
+      <div class="thumbList itemThumbList" data-slot="2">
+        <img src="bread1.png" class="thumb itemThumb" data-item="bread1.png">
+        <img src="bread2.png" class="thumb itemThumb" data-item="bread2.png">
+        <img src="bread3.png" class="thumb itemThumb" data-item="bread3.png">
+        <img src="bread4.png" class="thumb itemThumb" data-item="bread4.png">
+        <img src="item_dance.png" class="thumb itemThumb" data-item="item_dance.png">
+        <img src="item_bagbear.png" class="thumb itemThumb" data-item="item_bagbear.png">
+        <img src="item_baguette.png" class="thumb itemThumb" data-item="item_baguette.png">
+        <img src="item_logo.png" class="thumb itemThumb" data-item="item_logo.png">
+      </div>
+      <img src="item_dance.png" class="charBtn" id="nextFromItem2">
+    </div>
+
+    <!-- ===== 아이템 2 위치/크기 조정 화면 (아이템 2 선택 직후) ===== -->
+    <div class="positionScreen" id="screenPosition2" style="display:none;">
+      <div class="positionControls">
+        <p>아이템을 드래그해서 위치를 옮기고,<br>파란 점을 당겨 크기를 조절하세요</p>
+        <img src="item_dance.png" class="charBtn active" id="nextFromPosition2">
+      </div>
+    </div>
+
+    <!-- ===== 4번째 화면: 아이템 3 선택 ===== -->
+    <div class="screen screenOverlay" id="screenItem3" style="display:none;">
+      <h2>아이템 3 선택</h2>
+      <div class="thumbList itemThumbList" data-slot="3">
+        <img src="bread1.png" class="thumb itemThumb" data-item="bread1.png">
+        <img src="bread2.png" class="thumb itemThumb" data-item="bread2.png">
+        <img src="bread3.png" class="thumb itemThumb" data-item="bread3.png">
+        <img src="bread4.png" class="thumb itemThumb" data-item="bread4.png">
+        <img src="item_dance.png" class="thumb itemThumb" data-item="item_dance.png">
+        <img src="item_bagbear.png" class="thumb itemThumb" data-item="item_bagbear.png">
+        <img src="item_baguette.png" class="thumb itemThumb" data-item="item_baguette.png">
+        <img src="item_logo.png" class="thumb itemThumb" data-item="item_logo.png">
+      </div>
+      <img src="item_dance.png" class="charBtn" id="nextFromItem3">
+    </div>
+
+    <!-- ===== 아이템 3 위치/크기 조정 화면 (아이템 3 선택 직후) ===== -->
+    <div class="positionScreen" id="screenPosition3" style="display:none;">
+      <div class="positionControls">
+        <p>아이템을 드래그해서 위치를 옮기고,<br>파란 점을 당겨 크기를 조절하세요</p>
+        <img src="item_dance.png" class="charBtn active" id="nextFromPosition3">
+      </div>
+    </div>
+
+    <!-- ===== 5번째 화면: 아이템 1 모션 입력 ===== -->
+    <div class="screen screenOverlay" id="screenMotion1" style="display:none;">
+      <h2>아이템 1 모션 입력</h2>
+      <div class="motionButtons" data-motion-slot="1">
+        <button class="motionBtn" data-motion="통통 튀며">통통 튀며</button>
+        <button class="motionBtn" data-motion="빙글빙글">빙글빙글</button>
+        <button class="motionBtn" data-motion="지그재그">지그재그</button>
+        <button class="motionBtn" data-motion="스르륵 이동">스르륵 이동</button>
+        <button class="motionBtn" data-motion="빛의 속도로">빛의 속도로</button>
+        <button class="motionBtn" data-motion="오븐 속으로 쏙">오븐 속으로 쏙</button>
+        <button class="motionBtn" data-motion="random">🎲 아무거나 랜덤</button>
+      </div>
+      <input type="text" class="motionInput" id="motionInput1" placeholder="모션을 입력하거나 위 버튼을 눌러주세요">
+      <img src="item_dance.png" class="charBtn" id="nextFromMotion1">
+    </div>
+
+    <!-- ===== 6번째 화면: 아이템 2 모션 입력 ===== -->
+    <div class="screen screenOverlay" id="screenMotion2" style="display:none;">
+      <h2>아이템 2 모션 입력</h2>
+      <div class="motionButtons" data-motion-slot="2">
+        <button class="motionBtn" data-motion="통통 튀며">통통 튀며</button>
+        <button class="motionBtn" data-motion="빙글빙글">빙글빙글</button>
+        <button class="motionBtn" data-motion="지그재그">지그재그</button>
+        <button class="motionBtn" data-motion="스르륵 이동">스르륵 이동</button>
+        <button class="motionBtn" data-motion="빛의 속도로">빛의 속도로</button>
+        <button class="motionBtn" data-motion="오븐 속으로 쏙">오븐 속으로 쏙</button>
+        <button class="motionBtn" data-motion="random">🎲 아무거나 랜덤</button>
+      </div>
+      <input type="text" class="motionInput" id="motionInput2" placeholder="모션을 입력하거나 위 버튼을 눌러주세요">
+      <img src="item_dance.png" class="charBtn" id="nextFromMotion2">
+    </div>
+
+    <!-- ===== 7번째 화면: 아이템 3 모션 입력 ===== -->
+    <div class="screen screenOverlay" id="screenMotion3" style="display:none;">
+      <h2>아이템 3 모션 입력</h2>
+      <div class="motionButtons" data-motion-slot="3">
+        <button class="motionBtn" data-motion="통통 튀며">통통 튀며</button>
+        <button class="motionBtn" data-motion="빙글빙글">빙글빙글</button>
+        <button class="motionBtn" data-motion="지그재그">지그재그</button>
+        <button class="motionBtn" data-motion="스르륵 이동">스르륵 이동</button>
+        <button class="motionBtn" data-motion="빛의 속도로">빛의 속도로</button>
+        <button class="motionBtn" data-motion="오븐 속으로 쏙">오븐 속으로 쏙</button>
+        <button class="motionBtn" data-motion="random">🎲 아무거나 랜덤</button>
+      </div>
+      <input type="text" class="motionInput" id="motionInput3" placeholder="모션을 입력하거나 위 버튼을 눌러주세요">
+      <img src="item_dance.png" class="charBtn" id="nextFromMotion3">
+    </div>
+
+    <!-- ===== 8번째 화면: 브랜드 연출 (성 → 심 → 당 순서대로 크게 표시) ===== -->
+    <div id="brandReveal" style="display:none;">
+      <span class="brandChar" id="brandChar1">성</span>
+      <span class="brandChar" id="brandChar2">심</span>
+      <span class="brandChar" id="brandChar3">당</span>
+    </div>
+
+    <!-- ===== 9번째 화면: 애니메이션 (배경 위에서 아이템 1,2,3이 각자 모션대로 움직임) ===== -->
+    <div id="animationScreen" style="display:none;">
+      <div id="animBg"></div>
+      <img class="animItem" id="animItem1">
+      <img class="animItem" id="animItem2">
+      <img class="animItem" id="animItem3">
+    </div>
+
+    <!-- ===== 10번째 화면: 완료 + 공유하기 ===== -->
+    <div class="screen" id="screenFinish" style="display:none;">
+      <h2>완성했어요! 🎉</h2>
+      <p>나만의 성심당 빵 애니메이션이 완성됐어요.</p>
+      <button id="shareBtn" class="shareBtn">공유하기</button>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

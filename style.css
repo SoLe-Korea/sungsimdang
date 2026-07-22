@@ -1,0 +1,387 @@
+/* 기본값 초기화 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* 터치 시 파란 배경 방지 */
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #E8DCC8; /* 화면 밖 배경(PC에서 볼 때 여백 색) - 연한 베이지 */
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+/* 앱 전체를 담는 9:16 비율 컨테이너 */
+#app {
+  width: 100%;
+  max-width: 480px;      /* 너무 넓은 화면(태블릿/PC)에서도 폭 제한 */
+  aspect-ratio: 9 / 16;   /* 세로형 9:16 비율 고정 */
+  margin: 0 auto;         /* 가운데 정렬 */
+  background: #F5EFE0; /* 연한 베이지 - 따뜻한 느낌 */
+  position: relative;
+  overflow: hidden;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+/* 선택한 배경/아이템이 보여지는 미리보기 영역 (화면 대부분 차지) */
+#preview {
+  flex: 1;
+  background-size: contain; /* 가로 사진도 잘리지 않고 전체가 다 보이게 */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: #F5EFE0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-image 0.3s ease;
+  position: relative;
+}
+
+#previewText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 식빵 그림과 그 위에 겹쳐질 텍스트를 담는 상자 */
+.breadWrap {
+  position: relative;
+  width: 220px;
+}
+
+.breadIcon {
+  width: 100%;
+  display: block;
+}
+
+/* 식빵 안쪽 가운데에 겹쳐지는 손글씨 느낌 텍스트 */
+.breadText {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  width: 66%;
+  margin: 0;
+  text-align: center;
+  font-family: 'Poor Story', sans-serif;
+  font-weight: 700;
+  font-size: clamp(13px, 4.5vw, 20px);
+  line-height: 1.15;
+  letter-spacing: 1px;
+  color: #6F4518; /* 크레용 갈색 */
+}
+
+/* 위치/크기를 확정한 아이템이 실제 배치대로 미리보기에 계속 보이는 상태 */
+.placedItem {
+  position: absolute;
+  object-fit: contain;
+  pointer-events: none; /* 확정된 아이템은 클릭/드래그 대상이 아님 */
+  z-index: 3;
+}
+
+/* 위치/크기 조정 화면에서 드래그되는 아이템 이미지 */
+.dragItem {
+  position: absolute;
+  object-fit: contain;
+  touch-action: none; /* 드래그 중 화면 스크롤 방지 */
+  cursor: grab;
+  z-index: 5;
+  -webkit-user-drag: none; /* 이미지 네이티브 드래그(고스트 이미지) 비활성화 */
+  user-select: none;
+}
+
+.dragItem:active {
+  cursor: grabbing;
+}
+
+/* 아이템 오른쪽 아래에 붙어서 크기 조절을 담당하는 손잡이 */
+.dragHandle {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background: #3b82f6;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  touch-action: none;
+  cursor: nwse-resize;
+  z-index: 6;
+}
+
+/* 아이템 위치/크기 조정 화면: 미리보기 위에 뜨는 오버레이 (하단 패널이 숨겨져 미리보기가 전체 화면을 차지함) */
+.positionScreen {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none; /* 빈 영역 클릭은 아래(드래그 아이템)로 그대로 전달 */
+}
+
+.positionControls {
+  pointer-events: auto;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0));
+  text-align: center;
+}
+
+.positionControls p {
+  color: #fff;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+/* 화면 하단, 선택 화면들의 공통 스타일 (배경 선택, 아이템1/2/3 선택, 완료 화면)
+   기본은 미리보기 아래에서 자기 높이만큼 미리보기를 밀어내는 방식 (원래 방식) */
+.screen {
+  padding: 16px;
+  background: #F5EFE0;
+  border-top: 1px solid #eee;
+}
+
+/* 이미 배치를 마친 아이템이 있는 화면(아이템2/3 선택, 모션1/2/3 입력) 전용:
+   미리보기 위에 뜨는 반투명 오버레이로 바꿔서 미리보기가 항상 전체 화면 높이(최종 애니메이션과 동일)를
+   유지하게 함 → 이미 배치한 아이템 위치가 정확히 일치하고, 패널에 가려져도 비쳐 보임 */
+.screenOverlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  max-height: 100%;
+  overflow-y: auto;
+  background: rgba(245, 239, 224, 0.8);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-top: 1px solid rgba(238, 238, 238, 0.6);
+}
+
+.screen h2 {
+  font-size: 1rem;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.screen p {
+  font-size: 0.9rem;
+  color: #666;
+  text-align: left;
+}
+
+.thumbList {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.thumb {
+  width: 30%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 3px solid transparent; /* 기본은 투명 테두리 */
+  cursor: pointer;
+}
+
+/* 선택된 썸네일 표시 */
+.thumb.selected {
+  border-color: #3b82f6; /* 파란색 테두리 */
+}
+
+/* 다음/완료로 이어지는 곰식이 캐릭터 버튼 (계속 재사용) */
+.charBtn {
+  margin-top: 14px;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #3b82f6;
+  cursor: pointer;
+
+  /* 기본은 비활성 상태: 흐리고 눌리지 않음 */
+  opacity: 0.35;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+/* 배경/아이템을 선택하면 이 클래스가 추가되어 버튼이 살아남 */
+.charBtn.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.charBtn.active:active {
+  transform: scale(0.92); /* 눌렀을 때 살짝 눌리는 느낌 */
+}
+
+/* 모션 추천 버튼들을 감싸는 영역 */
+.motionButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+/* 추천 모션 버튼 하나하나 (알약 모양) */
+.motionBtn {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.motionBtn:active {
+  background: #dbeafe;
+}
+
+/* 모션을 직접 입력할 수 있는 텍스트창 */
+.motionInput {
+  width: 100%;
+  padding: 10px;
+  font-size: 0.95rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+/* 개봉박두 화면의 요약 텍스트 */
+#summaryText {
+  white-space: pre-line; /* 줄바꿈(\n)을 그대로 화면에 표시 */
+  line-height: 1.6;
+}
+
+/* 브랜드 연출 화면: 성 → 심 → 당이 순서대로 크게 나타남 */
+#brandReveal {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 10;
+}
+
+.brandChar {
+  font-family: 'Gugi', sans-serif;
+  font-size: 3.2rem;
+  color: #111;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* 이 클래스가 붙는 순간 글자가 커지면서 나타남 */
+.brandChar.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 애니메이션 화면: 배경 위에 아이템 3개가 각자 모션대로 움직임 */
+#animationScreen {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  overflow: hidden;
+}
+
+#animBg {
+  position: absolute;
+  inset: 0;
+  background-size: contain; /* 가로 사진도 잘리지 않고 전체가 다 보이게 */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: #F5EFE0;
+}
+
+.animItem {
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  object-fit: contain; /* 이미지를 자르지 않고 비율대로 다 보여줌 */
+}
+
+/* 아이템 1,2,3의 기본 위치 (겹치지 않게 흩어둠) */
+#animItem1 { top: 25%; left: 15%; }
+#animItem2 { top: 50%; left: 55%; }
+#animItem3 { top: 70%; left: 25%; }
+
+/* ===== 모션 종류별 애니메이션 ===== */
+
+/* 통통 튀며 */
+@keyframes motionBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-40px); }
+}
+.motion-bounce { animation: motionBounce 0.9s ease-in-out infinite; }
+
+/* 빙글빙글 */
+@keyframes motionSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.motion-spin { animation: motionSpin 1.2s linear infinite; }
+
+/* 지그재그 */
+@keyframes motionZigzag {
+  0%   { transform: translateX(0); }
+  25%  { transform: translateX(35px); }
+  50%  { transform: translateX(-35px); }
+  75%  { transform: translateX(35px); }
+  100% { transform: translateX(0); }
+}
+.motion-zigzag { animation: motionZigzag 1.6s ease-in-out infinite; }
+
+/* 스르륵 이동 */
+@keyframes motionSlide {
+  0%   { transform: translateX(-100px); }
+  100% { transform: translateX(100px); }
+}
+.motion-slide { animation: motionSlide 2.2s ease-in-out infinite alternate; }
+
+/* 빛의 속도로 */
+@keyframes motionFast {
+  0%   { transform: translateX(-120px); }
+  50%  { transform: translateX(120px); }
+  100% { transform: translateX(-120px); }
+}
+.motion-fast { animation: motionFast 0.7s linear infinite; }
+
+/* 오븐 속으로 쏙 (점점 작아지며 사라짐) */
+@keyframes motionOven {
+  0%   { transform: scale(1); opacity: 1; }
+  70%  { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.1); opacity: 0; }
+}
+.motion-oven { animation: motionOven 2.5s ease-in forwards; }
+
+/* 그 외 자유 입력(기본값): 둥실둥실 흔들리는 움직임 */
+@keyframes motionFloat {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50%      { transform: translateY(-18px) rotate(4deg); }
+}
+.motion-float { animation: motionFloat 2s ease-in-out infinite; }
+
+/* 완료 화면의 공유하기 버튼 */
+.shareBtn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  background: #6F4518; /* 성심당 크레용 갈색 톤과 통일 */
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
