@@ -325,7 +325,7 @@ document.getElementById("backFromMotion3").addEventListener("click", () => {
 
 // 랜덤 버튼을 눌렀을 때 후보로 쓸 모션 목록
 const randomMotionList = [
-  "통통 튀며", "빙글빙글", "지그재그", "스르륵 이동", "빛의 속도로", "오븐 속으로 쏙",
+  "통통 튀며", "빙글빙글", "지그재그", "스르륵 이동", "빛의 속도로", "풍선처럼 뻥", "펑키 댄스",
 ];
 
 // 슬롯(1,2,3)마다 입력된 모션 문장을 저장
@@ -426,7 +426,7 @@ function getLocalMotionClass(motionText) {
   if (motionText.includes("지그재그")) return "motion-zigzag";
   if (motionText.includes("스르륵")) return "motion-slide";
   if (motionText.includes("빛의 속도")) return "motion-fast";
-  if (motionText.includes("오븐")) return "motion-oven";
+  if (motionText.includes("풍선") || motionText.includes("뻥") || motionText.includes("오븐") || motionText.includes("터지")) return "motion-balloon";
   if (motionText.includes("펑키") || motionText.includes("댄스") || motionText.includes("춤")) return "motion-funky";
   return null;
 }
@@ -439,7 +439,7 @@ async function classifyMotionWithGroq(motionText) {
     "지그재그": "motion-zigzag",
     "스르륵": "motion-slide",
     "빛의속도": "motion-fast",
-    "오븐": "motion-oven",
+    "풍선처럼뻥": "motion-balloon",
     "펑키댄스": "motion-funky",
     "기본": "motion-float",
   };
@@ -459,7 +459,7 @@ async function classifyMotionWithGroq(motionText) {
             content:
               `다음 문장이 표현하는 움직임과 가장 비슷한 것을 아래 목록 중 하나만 골라서, ` +
               `다른 설명 없이 정확히 그 단어 하나만 답해줘.\n\n` +
-              `목록: 통통, 빙글빙글, 지그재그, 스르륵, 빛의속도, 오븐, 펑키댄스, 기본\n\n` +
+              `목록: 통통, 빙글빙글, 지그재그, 스르륵, 빛의속도, 풍선처럼뻥, 펑키댄스, 기본\n\n` +
               `문장: "${motionText}"`,
           },
         ],
@@ -673,13 +673,35 @@ function getMotionOffset(motionClass, t) {
       const dx = phase < 0.5 ? -120 + 240 * (phase / 0.5) : 120 - 240 * ((phase - 0.5) / 0.5);
       return { dx, dy: 0, rotateDeg: 0, scale: 1, opacity: 1 };
     }
-    case "motion-oven": {
+    case "motion-balloon": {
       const duration = 2.5;
-      if (t >= duration) return { dx: 0, dy: 0, rotateDeg: 0, scale: 0.1, opacity: 0 };
-      const phase = t / duration;
-      if (phase < 0.7) return { dx: 0, dy: 0, rotateDeg: 0, scale: 1, opacity: 1 };
-      const eased = easeIn((phase - 0.7) / 0.3);
-      return { dx: 0, dy: 0, rotateDeg: 0, scale: 1 - 0.9 * eased, opacity: 1 - eased };
+      const points = [
+        { p: 0,    scale: 1,   rot: 0,  op: 1 },
+        { p: 0.30, scale: 1.15, rot: -3, op: 1 },
+        { p: 0.55, scale: 1.3, rot: 3,  op: 1 },
+        { p: 0.75, scale: 1.5, rot: -2, op: 1 },
+        { p: 0.87, scale: 1.8, rot: 0,  op: 1 },
+        { p: 0.90, scale: 2.3, rot: 0,  op: 0 },
+        { p: 1,    scale: 2.3, rot: 0,  op: 0 },
+      ];
+      const phase = Math.min(1, t / duration);
+      for (let i = 0; i < points.length - 1; i++) {
+        const a = points[i];
+        const b = points[i + 1];
+        if (phase >= a.p && phase <= b.p) {
+          const span = b.p - a.p;
+          const local = span === 0 ? 0 : (phase - a.p) / span;
+          const eased = easeInOut(local);
+          return {
+            dx: 0,
+            dy: 0,
+            rotateDeg: a.rot + (b.rot - a.rot) * eased,
+            scale: a.scale + (b.scale - a.scale) * eased,
+            opacity: a.op + (b.op - a.op) * eased,
+          };
+        }
+      }
+      return { dx: 0, dy: 0, rotateDeg: 0, scale: 2.3, opacity: 0 };
     }
     case "motion-funky": {
       const phase = (t % 6) / 6;
