@@ -427,6 +427,7 @@ function getLocalMotionClass(motionText) {
   if (motionText.includes("스르륵")) return "motion-slide";
   if (motionText.includes("빛의 속도")) return "motion-fast";
   if (motionText.includes("오븐")) return "motion-oven";
+  if (motionText.includes("펑키") || motionText.includes("댄스") || motionText.includes("춤")) return "motion-funky";
   return null;
 }
 
@@ -439,6 +440,7 @@ async function classifyMotionWithGroq(motionText) {
     "스르륵": "motion-slide",
     "빛의속도": "motion-fast",
     "오븐": "motion-oven",
+    "펑키댄스": "motion-funky",
     "기본": "motion-float",
   };
 
@@ -457,7 +459,7 @@ async function classifyMotionWithGroq(motionText) {
             content:
               `다음 문장이 표현하는 움직임과 가장 비슷한 것을 아래 목록 중 하나만 골라서, ` +
               `다른 설명 없이 정확히 그 단어 하나만 답해줘.\n\n` +
-              `목록: 통통, 빙글빙글, 지그재그, 스르륵, 빛의속도, 오븐, 기본\n\n` +
+              `목록: 통통, 빙글빙글, 지그재그, 스르륵, 빛의속도, 오븐, 펑키댄스, 기본\n\n` +
               `문장: "${motionText}"`,
           },
         ],
@@ -603,6 +605,43 @@ function easeIn(t) {
   return t * t;
 }
 
+// 펑키 댄스(motion-funky)의 CSS @keyframes와 동일한 좌표를 그대로 옮겨 적은 것
+// (0~1 구간의 지점들 사이를 부드럽게 보간해서 캔버스에서도 같은 안무를 재현함)
+const FUNKY_KEYFRAMES = [
+  { p: 0,    dx: 0,   dy: 0,   rot: 0,    scale: 1 },
+  { p: 0.08, dx: -18,  dy: -6,  rot: -8,   scale: 1.05 },
+  { p: 0.16, dx: 18,   dy: -6,  rot: 8,    scale: 1.05 },
+  { p: 0.24, dx: -14,  dy: 0,   rot: -6,   scale: 1 },
+  { p: 0.32, dx: 0,    dy: -20, rot: 180,  scale: 1.1 },
+  { p: 0.40, dx: 0,    dy: 0,   rot: 360,  scale: 1 },
+  { p: 0.48, dx: 16,   dy: -8,  rot: 10,   scale: 1.05 },
+  { p: 0.56, dx: -16,  dy: -8,  rot: -10,  scale: 1.05 },
+  { p: 0.64, dx: 0,    dy: -24, rot: -360, scale: 1.1 },
+  { p: 0.72, dx: 0,    dy: 0,   rot: 0,    scale: 1 },
+  { p: 0.80, dx: 0,    dy: -10, rot: 0,    scale: 1.15 },
+  { p: 0.88, dx: 0,    dy: -10, rot: 0,    scale: 1.2 },
+  { p: 1,    dx: 0,    dy: 0,   rot: 0,    scale: 1 },
+];
+
+function interpolateKeyframes(points, phase) {
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (phase >= a.p && phase <= b.p) {
+      const span = b.p - a.p;
+      const local = span === 0 ? 0 : (phase - a.p) / span;
+      const eased = easeInOut(local);
+      return {
+        dx: a.dx + (b.dx - a.dx) * eased,
+        dy: a.dy + (b.dy - a.dy) * eased,
+        rotateDeg: a.rot + (b.rot - a.rot) * eased,
+        scale: a.scale + (b.scale - a.scale) * eased,
+      };
+    }
+  }
+  return { dx: 0, dy: 0, rotateDeg: 0, scale: 1 };
+}
+
 // 모션 클래스별로 style.css의 @keyframes를 흉내내서, 경과 시간(tSec)에 따른
 // 위치/회전/크기/투명도 변화량을 계산 (캔버스 녹화용)
 function getMotionOffset(motionClass, t) {
@@ -641,6 +680,11 @@ function getMotionOffset(motionClass, t) {
       if (phase < 0.7) return { dx: 0, dy: 0, rotateDeg: 0, scale: 1, opacity: 1 };
       const eased = easeIn((phase - 0.7) / 0.3);
       return { dx: 0, dy: 0, rotateDeg: 0, scale: 1 - 0.9 * eased, opacity: 1 - eased };
+    }
+    case "motion-funky": {
+      const phase = (t % 6) / 6;
+      const offset = interpolateKeyframes(FUNKY_KEYFRAMES, phase);
+      return { ...offset, opacity: 1 };
     }
     default: {
       // motion-float
