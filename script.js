@@ -89,19 +89,21 @@ document.getElementById("nextFromPosition3").addEventListener("click", () => {
   document.getElementById("screenMotion1").style.display = "block";
 });
 
-// ===== 아이템 위치/크기 조정 (아이템 1,2,3 선택 직후 공통으로 사용) =====
+// ===== 아이템 위치/크기/회전 조정 (아이템 1,2,3 선택 직후 공통으로 사용) =====
 
+const dragWrapper = document.getElementById("dragWrapper");
 const dragItem = document.getElementById("dragItem");
 const dragHandle = document.getElementById("dragHandle");
+const rotateHandle = document.getElementById("rotateHandle");
 
 // 일부 브라우저는 draggable="false"만으로 이미지 네이티브 드래그가 안 막히는 경우가 있어 한 번 더 방지
 dragItem.addEventListener("dragstart", (e) => e.preventDefault());
 
-// 슬롯별 위치(%)와 크기(px). 기본값은 기존 애니메이션 화면의 기본 배치와 동일하게 맞춤
+// 슬롯별 위치(%), 크기(px), 회전각(deg). 기본값은 기존 애니메이션 화면의 기본 배치와 동일하게 맞춤
 const itemTransforms = {
-  1: { leftPercent: 15, topPercent: 25, size: 110 },
-  2: { leftPercent: 55, topPercent: 50, size: 110 },
-  3: { leftPercent: 25, topPercent: 70, size: 110 },
+  1: { leftPercent: 15, topPercent: 25, size: 110, rotate: 0 },
+  2: { leftPercent: 55, topPercent: 50, size: 110, rotate: 0 },
+  3: { leftPercent: 25, topPercent: 70, size: 110, rotate: 0 },
 };
 
 let activePositionSlot = null;
@@ -109,7 +111,7 @@ let activePositionSlot = null;
 // 위치를 이미 확정한 슬롯들의 번호 (예: 아이템3 조정 중엔 {1, 2} — 아이템1,2가 실제 배치대로 계속 보임)
 const placedSlots = new Set();
 
-// 위치가 확정된 아이템들을 각자 정한 위치/크기 그대로 미리보기에 그려줌
+// 위치가 확정된 아이템들을 각자 정한 위치/크기/회전 그대로 미리보기에 그려줌
 function renderPlacedItems() {
   document.querySelectorAll(".placedItem").forEach((el) => el.remove());
 
@@ -122,6 +124,7 @@ function renderPlacedItems() {
     img.style.top = `${t.topPercent}%`;
     img.style.width = `${t.size}px`;
     img.style.height = `${t.size}px`;
+    img.style.transform = `rotate(${t.rotate}deg)`;
     preview.appendChild(img);
   });
 }
@@ -133,38 +136,27 @@ function openPositionScreen(slot) {
   document.getElementById(`screenPosition${slot}`).style.display = "flex";
 
   dragItem.src = selectedItems[slot];
-  dragItem.style.display = "block";
-  dragHandle.style.display = "block";
+  dragWrapper.style.display = "block";
   applyTransformToDragItem();
 }
 
 function closePositionScreen(slot) {
   document.getElementById(`screenPosition${slot}`).style.display = "none";
-  dragItem.style.display = "none";
-  dragHandle.style.display = "none";
+  dragWrapper.style.display = "none";
   activePositionSlot = null;
 
   placedSlots.add(slot);
   renderPlacedItems(); // 방금 위치를 정한 아이템을 실제 배치대로 계속 보이게 함
 }
 
-// 저장된 위치/크기 값을 드래그 아이템 요소에 실제로 반영
+// 저장된 위치/크기/회전 값을 드래그 틀에 실제로 반영 (손잡이들은 틀의 자식이라 회전에 자동으로 따라감)
 function applyTransformToDragItem() {
   const t = itemTransforms[activePositionSlot];
-  dragItem.style.left = `${t.leftPercent}%`;
-  dragItem.style.top = `${t.topPercent}%`;
-  dragItem.style.width = `${t.size}px`;
-  dragItem.style.height = `${t.size}px`;
-
-  positionHandle();
-}
-
-// 크기 조절 손잡이를 아이템의 오른쪽 아래 모서리로 이동
-function positionHandle() {
-  const previewRect = preview.getBoundingClientRect();
-  const itemRect = dragItem.getBoundingClientRect();
-  dragHandle.style.left = `${itemRect.right - previewRect.left - 11}px`;
-  dragHandle.style.top = `${itemRect.bottom - previewRect.top - 11}px`;
+  dragWrapper.style.left = `${t.leftPercent}%`;
+  dragWrapper.style.top = `${t.topPercent}%`;
+  dragWrapper.style.width = `${t.size}px`;
+  dragWrapper.style.height = `${t.size}px`;
+  dragWrapper.style.transform = `rotate(${t.rotate}deg)`;
 }
 
 // --- 드래그(이동) ---
@@ -176,7 +168,7 @@ dragItem.addEventListener("pointerdown", (e) => {
   e.preventDefault(); // 이미지 네이티브 드래그가 대신 발동되는 것을 막음
   draggingItem = true;
   dragItem.setPointerCapture(e.pointerId);
-  const rect = dragItem.getBoundingClientRect();
+  const rect = dragWrapper.getBoundingClientRect();
   dragOffsetX = e.clientX - rect.left;
   dragOffsetY = e.clientY - rect.top;
 });
@@ -206,7 +198,7 @@ dragItem.addEventListener("pointermove", (e) => {
   });
 });
 
-// --- 리사이즈(크기 조절) ---
+// --- 리사이즈(크기 조절): 중심점에서 손잡이까지의 거리로 계산해서 회전 각도와 무관하게 동작 ---
 let resizingItem = false;
 
 dragHandle.addEventListener("pointerdown", (e) => {
@@ -218,28 +210,50 @@ dragHandle.addEventListener("pointerdown", (e) => {
 dragHandle.addEventListener("pointermove", (e) => {
   if (!resizingItem) return;
 
-  const previewRect = preview.getBoundingClientRect();
-  const t = itemTransforms[activePositionSlot];
+  const rect = dragWrapper.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const distance = Math.hypot(e.clientX - centerX, e.clientY - centerY);
 
-  const itemLeftPx = (t.leftPercent / 100) * previewRect.width;
-  const itemTopPx = (t.topPercent / 100) * previewRect.height;
+  // 손잡이는 정사각형 박스의 모서리에 있으므로 중심-모서리 거리 * √2 가 한 변의 길이
+  const newSize = Math.max(30, Math.min(distance * Math.SQRT2, 400));
 
-  let newSize = Math.max(
-    e.clientX - previewRect.left - itemLeftPx,
-    e.clientY - previewRect.top - itemTopPx
-  );
-
-  // 너무 작아지거나 미리보기 밖으로 넘치지 않도록 제한
-  const maxSize = Math.min(previewRect.width - itemLeftPx, previewRect.height - itemTopPx);
-  newSize = Math.max(30, Math.min(newSize, maxSize));
-
-  t.size = newSize;
+  itemTransforms[activePositionSlot].size = newSize;
   applyTransformToDragItem();
 });
 
 ["pointerup", "pointercancel"].forEach((evt) => {
   dragHandle.addEventListener(evt, () => {
     resizingItem = false;
+  });
+});
+
+// --- 회전 ---
+let rotatingItem = false;
+
+rotateHandle.addEventListener("pointerdown", (e) => {
+  rotatingItem = true;
+  rotateHandle.setPointerCapture(e.pointerId);
+  e.stopPropagation();
+});
+
+rotateHandle.addEventListener("pointermove", (e) => {
+  if (!rotatingItem) return;
+
+  const rect = dragWrapper.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  // 포인터가 중심 바로 위에 있을 때 0도, 오른쪽으로 갈수록 시계방향으로 증가
+  const angleDeg = (Math.atan2(e.clientX - centerX, -(e.clientY - centerY)) * 180) / Math.PI;
+
+  itemTransforms[activePositionSlot].rotate = angleDeg;
+  applyTransformToDragItem();
+});
+
+["pointerup", "pointercancel"].forEach((evt) => {
+  rotateHandle.addEventListener(evt, () => {
+    rotatingItem = false;
   });
 });
 
@@ -412,16 +426,19 @@ async function startAnimation() {
   // 배경 화면에 선택한 배경 적용
   document.getElementById("animBg").style.backgroundImage = `url('${selectedBg}')`;
 
-  // 아이템 1, 2, 3 각각에 이미지, 위치/크기, 모션 클래스를 적용
+  // 아이템 1, 2, 3 각각에 이미지, 위치/크기/회전, 모션 클래스를 적용
+  // 위치/크기/회전은 틀(wrap)에, 모션 애니메이션은 안쪽 img에 따로 둬서 서로 덮어쓰지 않고 함께 합성됨
   for (const slot of [1, 2, 3]) {
+    const wrap = document.getElementById(`animItemWrap${slot}`);
     const img = document.getElementById(`animItem${slot}`);
     img.src = selectedItems[slot];
 
     const t = itemTransforms[slot];
-    img.style.left = `${t.leftPercent}%`;
-    img.style.top = `${t.topPercent}%`;
-    img.style.width = `${t.size}px`;
-    img.style.height = `${t.size}px`;
+    wrap.style.left = `${t.leftPercent}%`;
+    wrap.style.top = `${t.topPercent}%`;
+    wrap.style.width = `${t.size}px`;
+    wrap.style.height = `${t.size}px`;
+    wrap.style.transform = `rotate(${t.rotate}deg)`;
 
     const motionClass = await getFinalMotionClass(selectedMotions[slot]);
     img.classList.add(motionClass);
@@ -496,7 +513,12 @@ async function renderFinalImage() {
     const itemScale = Math.min(boxSize / itemImg.width, boxSize / itemImg.height);
     const drawW = itemImg.width * itemScale;
     const drawH = itemImg.height * itemScale;
-    ctx.drawImage(itemImg, boxX + (boxSize - drawW) / 2, boxY + (boxSize - drawH) / 2, drawW, drawH);
+
+    ctx.save();
+    ctx.translate(boxX + boxSize / 2, boxY + boxSize / 2);
+    ctx.rotate(((t.rotate || 0) * Math.PI) / 180);
+    ctx.drawImage(itemImg, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
   }
 
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
@@ -504,7 +526,7 @@ async function renderFinalImage() {
 
 // ===== 완성 동영상 만들기 (배경 + 아이템들의 실제 모션을 캔버스에 재현해서 녹화) =====
 
-const VIDEO_DURATION_SEC = 3;
+const VIDEO_DURATION_SEC = 7;
 const VIDEO_FPS = 30;
 
 let finalVideoBlob = null;
@@ -630,7 +652,8 @@ async function renderFinalVideo() {
         ctx.save();
         ctx.globalAlpha = offset.opacity;
         ctx.translate(centerX + offset.dx * scaleFactor, centerY + offset.dy * scaleFactor);
-        ctx.rotate((offset.rotateDeg * Math.PI) / 180);
+        // 사용자가 정한 기본 회전값 + 모션 애니메이션 자체의 회전을 합쳐서 적용
+        ctx.rotate(((t.rotate || 0) + offset.rotateDeg) * (Math.PI / 180));
         ctx.scale(offset.scale, offset.scale);
         ctx.drawImage(itemImg, -drawW / 2, -drawH / 2, drawW, drawH);
         ctx.restore();

@@ -84,13 +84,23 @@ html, body {
   z-index: 3;
 }
 
-/* 위치/크기 조정 화면에서 드래그되는 아이템 이미지 */
+/* 위치/크기/회전 조정 화면에서 움직이는 아이템을 감싸는 틀
+   위치(left/top)/크기(width/height)/회전(transform: rotate)을 이 요소에 적용하고,
+   안의 이미지와 손잡이들은 이 틀을 기준으로 따라 회전함 */
+.dragWrapper {
+  position: absolute;
+  z-index: 5;
+  transform-origin: center center;
+}
+
 .dragItem {
   position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   touch-action: none; /* 드래그 중 화면 스크롤 방지 */
   cursor: grab;
-  z-index: 5;
   -webkit-user-drag: none; /* 이미지 네이티브 드래그(고스트 이미지) 비활성화 */
   user-select: none;
 }
@@ -99,9 +109,11 @@ html, body {
   cursor: grabbing;
 }
 
-/* 아이템 오른쪽 아래에 붙어서 크기 조절을 담당하는 손잡이 */
+/* 아이템 오른쪽 아래 모서리에 붙어서 크기 조절을 담당하는 손잡이 (틀 기준 고정 위치라 회전에 따라 함께 돎) */
 .dragHandle {
   position: absolute;
+  right: -11px;
+  bottom: -11px;
   width: 22px;
   height: 22px;
   background: #3b82f6;
@@ -110,6 +122,40 @@ html, body {
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   touch-action: none;
   cursor: nwse-resize;
+  z-index: 6;
+}
+
+/* 아이템 위쪽에 떠서 회전을 담당하는 손잡이 */
+.rotateHandle {
+  position: absolute;
+  left: 50%;
+  top: -40px;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 22px;
+  background: #f59e0b;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  touch-action: none;
+  cursor: grab;
+  z-index: 6;
+}
+
+.rotateHandle:active {
+  cursor: grabbing;
+}
+
+/* 아이템과 회전 손잡이를 이어주는 얇은 선 */
+.rotateHandleLine {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  width: 2px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.85);
+  transform: translateX(-50%);
+  pointer-events: none;
   z-index: 6;
 }
 
@@ -304,17 +350,23 @@ html, body {
   background-color: #F5EFE0;
 }
 
-.animItem {
+/* 위치/크기/회전(사용자가 정한 값)을 담당하는 틀. 안의 img는 모션 애니메이션(이동/회전/확대축소)만 담당해서,
+   둘이 서로 다른 요소에 있으므로 회전 조정 값과 모션 애니메이션이 서로 덮어쓰지 않고 함께 합성됨 */
+.animItemWrap {
   position: absolute;
   width: 110px;
   height: 110px;
-  object-fit: contain; /* 이미지를 자르지 않고 비율대로 다 보여줌 */
+  top: 25%;
+  left: 15%;
 }
 
-/* 아이템 1,2,3의 기본 위치 (겹치지 않게 흩어둠) */
-#animItem1 { top: 25%; left: 15%; }
-#animItem2 { top: 50%; left: 55%; }
-#animItem3 { top: 70%; left: 25%; }
+.animItem {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 이미지를 자르지 않고 비율대로 다 보여줌 */
+}
 
 /* ===== 모션 종류별 애니메이션 ===== */
 
