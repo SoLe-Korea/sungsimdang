@@ -426,6 +426,11 @@ async function startAnimation() {
 
   document.getElementById("animationScreen").style.display = "block";
 
+  // 공유하기에 쓸 완성 이미지를 애니메이션이 재생되는 동안 미리 만들어둠
+  renderFinalImage().then((blob) => {
+    finalImageBlob = blob;
+  });
+
   // 애니메이션 6.5초가 지나면 완료 화면으로 전환
   setTimeout(() => {
     document.getElementById("animationScreen").style.display = "none";
@@ -433,15 +438,79 @@ async function startAnimation() {
   }, 6500);
 }
 
+// ===== 완성 이미지 만들기 (배경 + 아이템들을 정한 위치/크기 그대로 캔버스에 합성) =====
+
+const EXPORT_WIDTH = 1080;
+const EXPORT_HEIGHT = 1920;
+
+let finalImageBlob = null;
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function renderFinalImage() {
+  const canvas = document.createElement("canvas");
+  canvas.width = EXPORT_WIDTH;
+  canvas.height = EXPORT_HEIGHT;
+  const ctx = canvas.getContext("2d");
+
+  // 레터박스로 남는 부분을 채울 배경색
+  ctx.fillStyle = "#F5EFE0";
+  ctx.fillRect(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+
+  // 배경 이미지 (앱과 동일하게 자르지 않고 전체가 다 보이도록 - contain 방식)
+  if (selectedBg) {
+    const bgImg = await loadImage(selectedBg);
+    const scale = Math.min(EXPORT_WIDTH / bgImg.width, EXPORT_HEIGHT / bgImg.height);
+    const drawW = bgImg.width * scale;
+    const drawH = bgImg.height * scale;
+    ctx.drawImage(bgImg, (EXPORT_WIDTH - drawW) / 2, (EXPORT_HEIGHT - drawH) / 2, drawW, drawH);
+  }
+
+  // 아이템 1, 2, 3을 각자 정한 위치/크기 그대로 그림 (미리보기 기준 480px 폭 대비 배율 적용)
+  const scaleFactor = EXPORT_WIDTH / 480;
+  for (const slot of [1, 2, 3]) {
+    const path = selectedItems[slot];
+    if (!path) continue;
+
+    const itemImg = await loadImage(path);
+    const t = itemTransforms[slot];
+    const boxSize = t.size * scaleFactor;
+    const boxX = (t.leftPercent / 100) * EXPORT_WIDTH;
+    const boxY = (t.topPercent / 100) * EXPORT_HEIGHT;
+
+    // object-fit:contain과 동일하게 아이템 이미지의 원래 비율을 유지한 채 박스 안에 맞춤
+    const itemScale = Math.min(boxSize / itemImg.width, boxSize / itemImg.height);
+    const drawW = itemImg.width * itemScale;
+    const drawH = itemImg.height * itemScale;
+    ctx.drawImage(itemImg, boxX + (boxSize - drawW) / 2, boxY + (boxSize - drawH) / 2, drawW, drawH);
+  }
+
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+}
+
 // ===== 10번째 화면: 완료 + 공유하기 =====
 
 document.getElementById("shareBtn").addEventListener("click", async () => {
   const shareText = "성심당에서 나만의 빵 애니메이션을 만들었어요! 🍞";
+  const imageFile = finalImageBlob
+    ? new File([finalImageBlob], "sungsimdang-bread.png", { type: "image/png" })
+    : null;
 
   if (navigator.share) {
     // 스마트폰 기본 공유 기능(Web Share API) 사용
     try {
-      await navigator.share({ text: shareText });
+      if (imageFile && navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+        await navigator.share({ text: shareText, files: [imageFile] });
+      } else {
+        await navigator.share({ text: shareText });
+      }
     } catch (err) {
       // 사용자가 공유를 취소한 경우 등은 조용히 무시
     }
