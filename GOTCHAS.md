@@ -38,3 +38,16 @@
 ## WebFetch로 grok.com 접근 불가
 `grok.com/imagine/...` 같은 로그인 필요한 페이지는 WebFetch가 403으로 막힌다.
 사용자에게 화면 설명이나 스크린샷을 요청해서 대체해야 한다.
+
+## 작업 디렉터리에 `.git`이 없어질 수 있음
+2026-07-28 세션 시작 시 `/Users/sole/dev/photo`에 `.git`이 통째로 없는
+상태였다(원인 불명, 이전 세션의 정상 커밋 이력은 GitHub 원격에 그대로
+남아있었음). `git init`으로 새로 만들면 원격과 이력이 안 이어지고, 그 뒤
+`push`가 거부되거나 `--force`를 써야 하게 돼서 위험하다. 대신:
+1. 원격(`https://github.com/SoLe-Korea/sungsimdang.git`)을 스크래치패드 등
+   별도 위치에 `git clone`
+2. 작업 디렉터리에서 바뀐 파일만 그 클론 위로 `cp`
+3. 클론 안에서 `git add <파일명 명시> && git commit && git push`
+이렇게 하면 원격의 기존 커밋 이력에 자연스럽게 이어붙는 정상 커밋이 된다.
+`git status`가 "not a git repository"로 나와도 리포 자체가 망가진 게
+아니라 이 로컬 디렉터리에만 `.git`이 없는 경우가 많으니 당황하지 말 것.
