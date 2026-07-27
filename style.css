@@ -564,6 +564,78 @@ html, body {
 }
 .motion-funky { animation: motionFunky 6s ease-in-out infinite; }
 
+/* 말랑말랑 스쿼시 바운스: 착지할 때 옆으로 눌리고 공중에서는 세로로 늘어나는 만화식 바운스 */
+@keyframes motionSquash {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  20%  { transform: translateY(8px) scale(1.25, 0.75); }
+  45%  { transform: translateY(-45px) scale(0.85, 1.2); }
+  70%  { transform: translateY(0) scale(1.15, 0.85); }
+  85%  { transform: translateY(0) scale(0.95, 1.05); }
+}
+.motion-squash { animation: motionSquash 1s ease-in-out infinite; }
+
+/* 롤러코스터 스윙: 큰 곡선(루프)을 그리며 한 바퀴 도는 움직임 */
+@keyframes motionCoaster {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  25%  { transform: translate(50px, -60px) rotate(90deg); }
+  50%  { transform: translate(0, -100px) rotate(180deg); }
+  75%  { transform: translate(-50px, -60px) rotate(270deg); }
+  100% { transform: translate(0, 0) rotate(360deg); }
+}
+.motion-coaster { animation: motionCoaster 3s ease-in-out infinite; }
+
+/* 하트 뻥!: 심장이 뛰듯 짧게 두 번 커졌다 돌아오는 두근두근 펄스 */
+@keyframes motionHeart {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.25); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.2); }
+  60% { transform: scale(1); }
+}
+.motion-heart { animation: motionHeart 1.1s ease-in-out infinite; }
+
+/* 파도타기: 좌우로 흔들리면서 위아래로 천천히 오르내리는 여유로운 움직임 */
+@keyframes motionSurf {
+  0%   { transform: translate(0, -20px) rotate(-6deg); }
+  25%  { transform: translate(25px, 0) rotate(6deg); }
+  50%  { transform: translate(0, 20px) rotate(-6deg); }
+  75%  { transform: translate(-25px, 0) rotate(6deg); }
+  100% { transform: translate(0, -20px) rotate(-6deg); }
+}
+.motion-surf { animation: motionSurf 3.5s ease-in-out infinite; }
+
+/* 살짝 흔들기: 부드럽고 빠른 좌우 진동 */
+@keyframes motionWiggle {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-8px) rotate(-3deg); }
+  75% { transform: translateX(8px) rotate(3deg); }
+}
+.motion-wiggle { animation: motionWiggle 0.5s ease-in-out infinite; }
+
+/* 확대 및 강조: 커졌다가 원래대로 돌아오는 시선 끌기용 반복 */
+@keyframes motionZoomPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+}
+.motion-zoompulse { animation: motionZoomPulse 0.8s ease-in-out infinite; }
+
+/* 기울어지며 인사: 좌우로 기울어지며 인사하듯 흔드는 친근한 움직임 */
+@keyframes motionTiltWave {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(15deg); }
+  75% { transform: rotate(-15deg); }
+}
+.motion-tiltwave { animation: motionTiltWave 1.4s ease-in-out infinite; }
+
+/* 말랑 압축: 세로로 눌렸다가 탄성 있게 튕겨 돌아오는 단일 스퀴즈 */
+@keyframes motionSqueeze {
+  0%, 100% { transform: scale(1, 1); }
+  40% { transform: scale(1.2, 0.7); }
+  60% { transform: scale(0.9, 1.15); }
+  80% { transform: scale(1.05, 0.95); }
+}
+.motion-squeeze { animation: motionSqueeze 1.2s ease-in-out infinite; }
+
 /* 완료 화면의 공유하기 버튼 */
 .shareBtn {
   width: 100%;

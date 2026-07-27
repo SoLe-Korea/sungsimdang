@@ -326,6 +326,8 @@ document.getElementById("backFromMotion3").addEventListener("click", () => {
 // 랜덤 버튼을 눌렀을 때 후보로 쓸 모션 목록
 const randomMotionList = [
   "통통 튀며", "빙글빙글", "지그재그", "스르륵 이동", "빛의 속도로", "풍선처럼 뻥", "펑키 댄스",
+  "말랑말랑 스쿼시 바운스", "롤러코스터 스윙", "하트 뻥", "파도타기",
+  "살짝 흔들기", "확대 및 강조", "기울어지며 인사", "말랑 압축",
 ];
 
 // 슬롯(1,2,3)마다 입력된 모션 문장을 저장
@@ -426,6 +428,15 @@ function getLocalMotionClass(motionText) {
   if (motionText.includes("지그재그")) return "motion-zigzag";
   if (motionText.includes("스르륵")) return "motion-slide";
   if (motionText.includes("빛의 속도")) return "motion-fast";
+  // ⚠️ "하트 뻥"에도 "뻥"이 들어있어서, 아래 motion-balloon의 "뻥" 검사보다 반드시 앞에 있어야 함
+  if (motionText.includes("하트")) return "motion-heart";
+  if (motionText.includes("스쿼시")) return "motion-squash";
+  if (motionText.includes("롤러코스터")) return "motion-coaster";
+  if (motionText.includes("파도")) return "motion-surf";
+  if (motionText.includes("흔들기")) return "motion-wiggle";
+  if (motionText.includes("확대")) return "motion-zoompulse";
+  if (motionText.includes("인사")) return "motion-tiltwave";
+  if (motionText.includes("압축")) return "motion-squeeze";
   if (motionText.includes("풍선") || motionText.includes("뻥") || motionText.includes("오븐") || motionText.includes("터지")) return "motion-balloon";
   if (motionText.includes("펑키") || motionText.includes("댄스") || motionText.includes("춤")) return "motion-funky";
   return null;
@@ -441,6 +452,14 @@ async function classifyMotionWithGroq(motionText) {
     "빛의속도": "motion-fast",
     "풍선처럼뻥": "motion-balloon",
     "펑키댄스": "motion-funky",
+    "스쿼시바운스": "motion-squash",
+    "롤러코스터스윙": "motion-coaster",
+    "하트뻥": "motion-heart",
+    "파도타기": "motion-surf",
+    "살짝흔들기": "motion-wiggle",
+    "확대강조": "motion-zoompulse",
+    "기울어지며인사": "motion-tiltwave",
+    "말랑압축": "motion-squeeze",
     "기본": "motion-float",
   };
 
@@ -459,7 +478,8 @@ async function classifyMotionWithGroq(motionText) {
             content:
               `다음 문장이 표현하는 움직임과 가장 비슷한 것을 아래 목록 중 하나만 골라서, ` +
               `다른 설명 없이 정확히 그 단어 하나만 답해줘.\n\n` +
-              `목록: 통통, 빙글빙글, 지그재그, 스르륵, 빛의속도, 풍선처럼뻥, 펑키댄스, 기본\n\n` +
+              `목록: 통통, 빙글빙글, 지그재그, 스르륵, 빛의속도, 풍선처럼뻥, 펑키댄스, ` +
+              `스쿼시바운스, 롤러코스터스윙, 하트뻥, 파도타기, 살짝흔들기, 확대강조, 기울어지며인사, 말랑압축, 기본\n\n` +
               `문장: "${motionText}"`,
           },
         ],
@@ -623,6 +643,63 @@ const FUNKY_KEYFRAMES = [
   { p: 1,    dx: 0,    dy: 0,   rot: 0,    scale: 1 },
 ];
 
+// 아래 배열들도 각 모션의 CSS @keyframes 좌표를 그대로 옮겨 적은 것 (0~1 구간 기준)
+const SQUASH_KEYFRAMES = [
+  { p: 0,    dx: 0, dy: 0,   rot: 0, scale: 1, sx: 1,    sy: 1 },
+  { p: 0.20, dx: 0, dy: 8,   rot: 0, scale: 1, sx: 1.25, sy: 0.75 },
+  { p: 0.45, dx: 0, dy: -45, rot: 0, scale: 1, sx: 0.85, sy: 1.2 },
+  { p: 0.70, dx: 0, dy: 0,   rot: 0, scale: 1, sx: 1.15, sy: 0.85 },
+  { p: 0.85, dx: 0, dy: 0,   rot: 0, scale: 1, sx: 0.95, sy: 1.05 },
+  { p: 1,    dx: 0, dy: 0,   rot: 0, scale: 1, sx: 1,    sy: 1 },
+];
+
+const COASTER_KEYFRAMES = [
+  { p: 0,    dx: 0,   dy: 0,    rot: 0,   scale: 1 },
+  { p: 0.25, dx: 50,  dy: -60,  rot: 90,  scale: 1 },
+  { p: 0.50, dx: 0,   dy: -100, rot: 180, scale: 1 },
+  { p: 0.75, dx: -50, dy: -60,  rot: 270, scale: 1 },
+  { p: 1,    dx: 0,   dy: 0,    rot: 360, scale: 1 },
+];
+
+const HEART_KEYFRAMES = [
+  { p: 0,    dx: 0, dy: 0, rot: 0, scale: 1 },
+  { p: 0.15, dx: 0, dy: 0, rot: 0, scale: 1.25 },
+  { p: 0.30, dx: 0, dy: 0, rot: 0, scale: 1 },
+  { p: 0.45, dx: 0, dy: 0, rot: 0, scale: 1.2 },
+  { p: 0.60, dx: 0, dy: 0, rot: 0, scale: 1 },
+  { p: 1,    dx: 0, dy: 0, rot: 0, scale: 1 },
+];
+
+const SURF_KEYFRAMES = [
+  { p: 0,    dx: 0,   dy: -20, rot: -6, scale: 1 },
+  { p: 0.25, dx: 25,  dy: 0,   rot: 6,  scale: 1 },
+  { p: 0.50, dx: 0,   dy: 20,  rot: -6, scale: 1 },
+  { p: 0.75, dx: -25, dy: 0,   rot: 6,  scale: 1 },
+  { p: 1,    dx: 0,   dy: -20, rot: -6, scale: 1 },
+];
+
+const WIGGLE_KEYFRAMES = [
+  { p: 0,    dx: 0,  dy: 0, rot: 0,  scale: 1 },
+  { p: 0.25, dx: -8, dy: 0, rot: -3, scale: 1 },
+  { p: 0.75, dx: 8,  dy: 0, rot: 3,  scale: 1 },
+  { p: 1,    dx: 0,  dy: 0, rot: 0,  scale: 1 },
+];
+
+const TILTWAVE_KEYFRAMES = [
+  { p: 0,    dx: 0, dy: 0, rot: 0,   scale: 1 },
+  { p: 0.25, dx: 0, dy: 0, rot: 15,  scale: 1 },
+  { p: 0.75, dx: 0, dy: 0, rot: -15, scale: 1 },
+  { p: 1,    dx: 0, dy: 0, rot: 0,   scale: 1 },
+];
+
+const SQUEEZE_KEYFRAMES = [
+  { p: 0,    dx: 0, dy: 0, rot: 0, scale: 1, sx: 1,    sy: 1 },
+  { p: 0.40, dx: 0, dy: 0, rot: 0, scale: 1, sx: 1.2,  sy: 0.7 },
+  { p: 0.60, dx: 0, dy: 0, rot: 0, scale: 1, sx: 0.9,  sy: 1.15 },
+  { p: 0.80, dx: 0, dy: 0, rot: 0, scale: 1, sx: 1.05, sy: 0.95 },
+  { p: 1,    dx: 0, dy: 0, rot: 0, scale: 1, sx: 1,    sy: 1 },
+];
+
 function interpolateKeyframes(points, phase) {
   for (let i = 0; i < points.length - 1; i++) {
     const a = points[i];
@@ -631,15 +708,22 @@ function interpolateKeyframes(points, phase) {
       const span = b.p - a.p;
       const local = span === 0 ? 0 : (phase - a.p) / span;
       const eased = easeInOut(local);
+      // sx/sy가 있으면 가로/세로를 따로 늘리고(스쿼시 앤 스트레치), 없으면 scale로 균일하게
+      const aSx = a.sx !== undefined ? a.sx : a.scale;
+      const aSy = a.sy !== undefined ? a.sy : a.scale;
+      const bSx = b.sx !== undefined ? b.sx : b.scale;
+      const bSy = b.sy !== undefined ? b.sy : b.scale;
       return {
         dx: a.dx + (b.dx - a.dx) * eased,
         dy: a.dy + (b.dy - a.dy) * eased,
         rotateDeg: a.rot + (b.rot - a.rot) * eased,
         scale: a.scale + (b.scale - a.scale) * eased,
+        scaleX: aSx + (bSx - aSx) * eased,
+        scaleY: aSy + (bSy - aSy) * eased,
       };
     }
   }
-  return { dx: 0, dy: 0, rotateDeg: 0, scale: 1 };
+  return { dx: 0, dy: 0, rotateDeg: 0, scale: 1, scaleX: 1, scaleY: 1 };
 }
 
 // 모션 클래스별로 style.css의 @keyframes를 흉내내서, 경과 시간(tSec)에 따른
@@ -706,6 +790,39 @@ function getMotionOffset(motionClass, t) {
     case "motion-funky": {
       const phase = (t % 6) / 6;
       const offset = interpolateKeyframes(FUNKY_KEYFRAMES, phase);
+      return { ...offset, opacity: 1 };
+    }
+    case "motion-squash": {
+      const offset = interpolateKeyframes(SQUASH_KEYFRAMES, (t % 1) / 1);
+      return { ...offset, opacity: 1 };
+    }
+    case "motion-coaster": {
+      const offset = interpolateKeyframes(COASTER_KEYFRAMES, (t % 3) / 3);
+      return { ...offset, opacity: 1 };
+    }
+    case "motion-heart": {
+      const offset = interpolateKeyframes(HEART_KEYFRAMES, (t % 1.1) / 1.1);
+      return { ...offset, opacity: 1 };
+    }
+    case "motion-surf": {
+      const offset = interpolateKeyframes(SURF_KEYFRAMES, (t % 3.5) / 3.5);
+      return { ...offset, opacity: 1 };
+    }
+    case "motion-wiggle": {
+      const offset = interpolateKeyframes(WIGGLE_KEYFRAMES, (t % 0.5) / 0.5);
+      return { ...offset, opacity: 1 };
+    }
+    case "motion-zoompulse": {
+      const phase = (t % 0.8) / 0.8;
+      const eased = phase <= 0.5 ? easeInOut(phase / 0.5) : easeInOut((1 - phase) / 0.5);
+      return { dx: 0, dy: 0, rotateDeg: 0, scale: 1 + 0.35 * eased, opacity: 1 };
+    }
+    case "motion-tiltwave": {
+      const offset = interpolateKeyframes(TILTWAVE_KEYFRAMES, (t % 1.4) / 1.4);
+      return { ...offset, opacity: 1 };
+    }
+    case "motion-squeeze": {
+      const offset = interpolateKeyframes(SQUEEZE_KEYFRAMES, (t % 1.2) / 1.2);
       return { ...offset, opacity: 1 };
     }
     default: {
@@ -784,7 +901,11 @@ async function renderFinalVideo() {
         ctx.translate(centerX + offset.dx * scaleFactor, centerY + offset.dy * scaleFactor);
         // 사용자가 정한 기본 회전값 + 모션 애니메이션 자체의 회전을 합쳐서 적용
         ctx.rotate(((t.rotate || 0) + offset.rotateDeg) * (Math.PI / 180));
-        ctx.scale(offset.scale, offset.scale);
+        // 스쿼시 계열 모션은 가로/세로 배율이 다르므로(scaleX/scaleY), 없으면 균일 배율 사용
+        ctx.scale(
+          offset.scaleX !== undefined ? offset.scaleX : offset.scale,
+          offset.scaleY !== undefined ? offset.scaleY : offset.scale,
+        );
         ctx.drawImage(itemImg, -drawW / 2, -drawH / 2, drawW, drawH);
         ctx.restore();
       }
